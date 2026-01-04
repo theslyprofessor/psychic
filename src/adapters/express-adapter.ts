@@ -169,12 +169,12 @@ export class ExpressAdapter implements PsychicAdapter {
       },
 
       cookie(name: string, value: string, options?: PsychicCookieOptions) {
-        res.cookie(name, value, options)
+        res.cookie(name, value, options as any)
         return this
       },
 
       clearCookie(name: string, options?: PsychicCookieOptions) {
-        res.clearCookie(name, options)
+        res.clearCookie(name, options as any)
         return this
       },
     }

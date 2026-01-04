@@ -21,9 +21,9 @@ export interface PsychicRequest {
   params: Record<string, string>
   query: Record<string, any>
   body: any
-  headers: Record<string, string>
+  headers: Record<string, string | string[] | undefined>
   cookies: Record<string, string>
-  ip: string
+  ip: string | undefined
   protocol: string
   hostname: string
   
@@ -35,12 +35,12 @@ export interface PsychicResponse {
   // Status code
   status(code: number): this
   
-  // Response methods
-  json(data: any): void | Promise<void>
-  text(content: string): void | Promise<void>
-  html(content: string): void | Promise<void>
-  send(data: any): void | Promise<void>
-  redirect(url: string, code?: number): void | Promise<void>
+  // Response methods - allow returning values for framework compatibility
+  json(data: any): any
+  text(content: string): any
+  html(content: string): any
+  send(data: any): any
+  redirect(url: string, code?: number): any
   
   // Headers
   header(key: string, value: string): this

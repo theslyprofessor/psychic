@@ -100,7 +100,7 @@ export default class PsychicServer {
       // pick up the correct status code.
       if (res.statusCode === 200) res.status(404)
 
-      logIfDevelopment({ req, res, startTime: Date.now(), fallbackStatusCode: 404 })
+      logIfDevelopment({ req: req as any, res: res as any, startTime: Date.now(), fallbackStatusCode: 404 })
 
       // call next to let express handle sending the 404
       next()

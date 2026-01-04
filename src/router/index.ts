@@ -538,7 +538,7 @@ suggested fix:  "${convertRouteParams(path)}"
     res: Response,
     action: string,
   ) {
-    return new ControllerClass(req, res, {
+    return new ControllerClass(req as any, res as any, {
       action,
     })
   }

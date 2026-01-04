@@ -49,7 +49,8 @@ export class HonoAdapter implements PsychicAdapter {
         this.app.options(path, honoHandler)
         break
       case 'head':
-        this.app.head(path, honoHandler)
+        // Hono doesn't have a head method, use get instead
+        this.app.get(path, honoHandler)
         break
       default:
         throw new Error(`Unsupported HTTP method: ${method}`)
@@ -85,8 +86,9 @@ export class HonoAdapter implements PsychicAdapter {
       
       // If handler didn't send response, return error
       if (!c.finalized) {
-        return c.json({ error: err.message }, 500)
+        return c.json({ error: err.message }, 500 as any)
       }
+      return c.res
     })
   }
 
@@ -182,7 +184,7 @@ export class HonoAdapter implements PsychicAdapter {
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
-        return c.json(data, state.statusCode)
+        return c.json(data, state.statusCode as any)
       },
 
       text(content: string) {
@@ -190,7 +192,7 @@ export class HonoAdapter implements PsychicAdapter {
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
-        return c.text(content, state.statusCode)
+        return c.text(content, state.statusCode as any)
       },
 
       html(content: string) {
@@ -198,7 +200,7 @@ export class HonoAdapter implements PsychicAdapter {
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
-        return c.html(content, state.statusCode)
+        return c.html(content, state.statusCode as any)
       },
 
       send(data: any) {
@@ -208,14 +210,14 @@ export class HonoAdapter implements PsychicAdapter {
         })
         
         if (typeof data === 'object') {
-          return c.json(data, state.statusCode)
+          return c.json(data, state.statusCode as any)
         }
-        return c.text(String(data), state.statusCode)
+        return c.text(String(data), state.statusCode as any)
       },
 
       redirect(url: string, code = 302) {
         this._headersSent = true
-        return c.redirect(url, code)
+        return c.redirect(url, code as any)
       },
 
       header(key: string, value: string) {
@@ -235,23 +237,25 @@ export class HonoAdapter implements PsychicAdapter {
       },
 
       cookie(name: string, value: string, options?: PsychicCookieOptions) {
-        setCookie(c, name, value, {
-          maxAge: options?.maxAge,
-          expires: options?.expires,
-          httpOnly: options?.httpOnly,
-          path: options?.path,
-          domain: options?.domain,
-          secure: options?.secure,
-          sameSite: options?.sameSite as any,
-        })
+        const cookieOpts: any = {}
+        if (options?.maxAge !== undefined) cookieOpts.maxAge = options.maxAge
+        if (options?.expires !== undefined) cookieOpts.expires = options.expires
+        if (options?.httpOnly !== undefined) cookieOpts.httpOnly = options.httpOnly
+        if (options?.path !== undefined) cookieOpts.path = options.path
+        if (options?.domain !== undefined) cookieOpts.domain = options.domain
+        if (options?.secure !== undefined) cookieOpts.secure = options.secure
+        if (options?.sameSite !== undefined) cookieOpts.sameSite = options.sameSite
+        
+        setCookie(c, name, value, cookieOpts)
         return this
       },
 
       clearCookie(name: string, options?: PsychicCookieOptions) {
-        deleteCookie(c, name, {
-          path: options?.path,
-          domain: options?.domain,
-        })
+        const cookieOpts: any = {}
+        if (options?.path !== undefined) cookieOpts.path = options.path
+        if (options?.domain !== undefined) cookieOpts.domain = options.domain
+        
+        deleteCookie(c, name, cookieOpts)
         return this
       },
     }
@@ -263,8 +267,8 @@ export class HonoAdapter implements PsychicAdapter {
     if (callback) callback()
     
     // Bun.serve for maximum performance
-    if (typeof Bun !== 'undefined') {
-      return Bun.serve({
+    if (typeof (globalThis as any).Bun !== 'undefined') {
+      return (globalThis as any).Bun.serve({
         port,
         fetch: this.app.fetch,
       })

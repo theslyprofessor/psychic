@@ -18,7 +18,11 @@ export default class Session {
   }
 
   public setCookie(name: string, data: string, opts: CustomSessionCookieOptions = {}) {
-    this.res.cookie(name, InternalEncrypt.encryptCookie(data), {
+    const encryptedData = InternalEncrypt.encryptCookie(data)
+    if (encryptedData === null) {
+      throw new Error('Failed to encrypt cookie data')
+    }
+    this.res.cookie(name, encryptedData, {
       secure: EnvInternal.isProduction,
       httpOnly: true,
       ...opts,
