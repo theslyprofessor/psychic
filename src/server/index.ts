@@ -4,6 +4,9 @@ import * as cors from 'cors'
 import * as express from 'express'
 import { Express } from 'express'
 import { Server } from 'node:http'
+import { ExpressAdapter } from '../adapters/express-adapter.js'
+import { HonoAdapter } from '../adapters/hono-adapter.js'
+import type { PsychicAdapter } from '../adapters/types.js'
 import logIfDevelopment from '../controller/helpers/logIfDevelopment.js'
 import EnvInternal from '../helpers/EnvInternal.js'
 import PsychicApp, { PsychicSslCredentials } from '../psychic-app/index.js'
@@ -26,6 +29,7 @@ export default class PsychicServer {
 
   public expressApp: Express
   public httpServer: Server
+  public adapter: PsychicAdapter
   private booted = false
   constructor() {
     this.buildApp()
@@ -197,8 +201,25 @@ export default class PsychicServer {
   }
 
   public buildApp() {
-    this.expressApp = express.default()
-    this.expressApp.use(cookieParser.default())
+    // Detect framework from environment variable
+    const framework = process.env.PSYCHIC_FRAMEWORK || 'express'
+    
+    // Create appropriate adapter
+    if (framework === 'hono') {
+      console.log('🚀 Psychic running on Hono (high performance mode)')
+      this.adapter = new HonoAdapter()
+    } else {
+      console.log('🔧 Psychic running on Express (default)')
+      this.adapter = new ExpressAdapter()
+    }
+    
+    // Create app using adapter
+    this.expressApp = this.adapter.createApp()
+    
+    // Apply cookie parser (Express-specific for now)
+    if (framework === 'express') {
+      this.expressApp.use(cookieParser.default())
+    }
   }
 
   private initializeCors() {
