@@ -10,7 +10,7 @@ import {
   StrictInterface,
   ViewModel,
 } from '@rvoh/dream/types'
-import { Request, Response } from 'express'
+import { PsychicRequest, PsychicResponse } from '../adapters/types.js'
 import { ControllerHook } from '../controller/hooks.js'
 import ParamValidationError from '../error/controller/ParamValidationError.js'
 import HttpStatusBadGateway from '../error/http/BadGateway.js'
@@ -219,16 +219,16 @@ export default class PsychicController {
     return true
   }
 
-  public req: Request
-  public res: Response
+  public req: PsychicRequest
+  public res: PsychicResponse
   public session: Session
   public action: string
   public renderOpts: SerializerRendererOpts
   private startTime: number
 
   constructor(
-    req: Request,
-    res: Response,
+    req: PsychicRequest,
+    res: PsychicResponse,
     {
       action,
     }: {
@@ -735,19 +735,22 @@ export default class PsychicController {
   private expressSendJson(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any,
-    statusCode: number = this.res.statusCode,
+    statusCode: number = this.res._statusCode || 200,
   ) {
-    this.res.type('json').status(statusCode).send(toJson(data, PsychicApp.getOrFail().sanitizeResponseJson))
+    this.res.status(statusCode)
+    this.res.setHeader('Content-Type', 'application/json')
+    this.res.json(toJson(data, PsychicApp.getOrFail().sanitizeResponseJson))
     this.logIfDevelopment()
   }
 
   private expressSendStatus(statusCode: number) {
-    this.res.sendStatus(statusCode)
+    this.res.status(statusCode)
+    this.res.send('')
     this.logIfDevelopment()
   }
 
   private expressRedirect(statusCode: number, newLocation: string) {
-    this.res.redirect(statusCode, newLocation)
+    this.res.redirect(newLocation, statusCode)
     this.logIfDevelopment()
   }
 

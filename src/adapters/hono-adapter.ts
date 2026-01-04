@@ -160,6 +160,15 @@ export class HonoAdapter implements PsychicAdapter {
     const psychicRes: PsychicResponse = {
       _statusCode: state.statusCode,
       _headers: state.headers,
+      _headersSent: false,
+
+      get statusCode() {
+        return state.statusCode
+      },
+
+      get headersSent() {
+        return c.finalized || this._headersSent || false
+      },
 
       status(code: number) {
         state.statusCode = code
@@ -168,6 +177,7 @@ export class HonoAdapter implements PsychicAdapter {
       },
 
       json(data: any) {
+        this._headersSent = true
         // Apply status code and headers
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
@@ -176,6 +186,7 @@ export class HonoAdapter implements PsychicAdapter {
       },
 
       text(content: string) {
+        this._headersSent = true
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
@@ -183,6 +194,7 @@ export class HonoAdapter implements PsychicAdapter {
       },
 
       html(content: string) {
+        this._headersSent = true
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
@@ -190,6 +202,7 @@ export class HonoAdapter implements PsychicAdapter {
       },
 
       send(data: any) {
+        this._headersSent = true
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
@@ -201,6 +214,7 @@ export class HonoAdapter implements PsychicAdapter {
       },
 
       redirect(url: string, code = 302) {
+        this._headersSent = true
         return c.redirect(url, code)
       },
 

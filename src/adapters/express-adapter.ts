@@ -109,6 +109,15 @@ export class ExpressAdapter implements PsychicAdapter {
     const psychicRes: PsychicResponse = {
       _statusCode: 200,
       _headers: {},
+      _headersSent: false,
+
+      get statusCode() {
+        return res.statusCode || this._statusCode || 200
+      },
+
+      get headersSent() {
+        return res.headersSent || this._headersSent || false
+      },
 
       status(code: number) {
         this._statusCode = code
@@ -117,23 +126,28 @@ export class ExpressAdapter implements PsychicAdapter {
       },
 
       json(data: any) {
+        this._headersSent = true
         res.json(data)
       },
 
       text(content: string) {
+        this._headersSent = true
         res.send(content)
       },
 
       html(content: string) {
+        this._headersSent = true
         res.setHeader('Content-Type', 'text/html')
         res.send(content)
       },
 
       send(data: any) {
+        this._headersSent = true
         res.send(data)
       },
 
       redirect(url: string, code = 302) {
+        this._headersSent = true
         res.redirect(code, url)
       },
 

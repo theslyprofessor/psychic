@@ -54,6 +54,11 @@ export interface PsychicResponse {
   // Internal state tracking
   _statusCode?: number
   _headers?: Record<string, string>
+  _headersSent?: boolean
+  
+  // Compatibility properties
+  get statusCode(): number
+  get headersSent(): boolean
 }
 
 export type PsychicRouteHandler = (
