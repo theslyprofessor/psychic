@@ -45,7 +45,7 @@ export function createPsychicHttpInstance(app: Express, sslCredentials: PsychicS
   }
 }
 
-function welcomeMessage({ port }: { port: number }) {
+export function welcomeMessage({ port }: { port: number }) {
   if (EnvInternal.isDevelopment) {
     DreamCLI.logger.log(colorize(PsychicLogos.asciiLogo(), { color: 'greenBright' }), {
       logPrefix: '',

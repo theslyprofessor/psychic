@@ -14,6 +14,7 @@ import PsychicRouter from '../router/index.js'
 import startPsychicServer, {
   createPsychicHttpInstance,
   StartPsychicServerOptions,
+  welcomeMessage,
 } from './helpers/startPsychicServer.js'
 
 // const debugEnabled = debuglog('psychic').enabled
@@ -48,7 +49,7 @@ export default class PsychicServer {
 
     this.setSecureDefaultHeaders()
 
-    this.expressApp.use((_, res, next) => {
+    this.adapter.use((_, res, next) => {
       Object.keys(psychicApp.defaultResponseHeaders).forEach(key => {
         res.setHeader(key, psychicApp.defaultResponseHeaders[key]!)
       })
@@ -112,9 +113,9 @@ export default class PsychicServer {
   }
 
   private setSecureDefaultHeaders() {
-    this.expressApp.disable('x-powered-by')
+    this.adapter.disable('x-powered-by')
 
-    this.expressApp.use((_, res, next) => {
+    this.adapter.use((_, res, next) => {
       res.setHeader('X-Content-Type-Options', 'nosniff')
 
       if (EnvInternal.isProduction) {
@@ -129,17 +130,23 @@ export default class PsychicServer {
     await this.boot()
 
     const psychicApp = PsychicApp.getOrFail()
+    const actualPort = port || psychicApp.port
 
     const startOverride = psychicApp['overrides']['server:start']
     if (startOverride) {
-      this.httpServer = await startOverride(this, { port })
+      this.httpServer = await startOverride(this, { port: actualPort })
     } else {
-      const httpServer = await startPsychicServer({
-        app: this.expressApp,
-        port: port || psychicApp.port,
-        sslCredentials: PsychicApp.getOrFail().sslCredentials,
+      // Use adapter's listen() method for framework compatibility
+      // For Bun, the callback may be called synchronously, so we need to
+      // capture the server reference from the return value, not inside callback
+      this.httpServer = await new Promise((resolve) => {
+        let serverRef: any
+        serverRef = this.adapter.listen(actualPort, () => {
+          welcomeMessage({ port: actualPort })
+          // Resolve with the server reference captured from the return value
+          resolve(serverRef)
+        })
       })
-      this.httpServer = httpServer
     }
 
     for (const hook of psychicApp.specialHooks.serverStart) {
@@ -223,18 +230,29 @@ export default class PsychicServer {
   }
 
   private initializeCors() {
-    this.expressApp.use(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (cors as unknown as { default: (opts: any) => any }).default(PsychicApp.getOrFail().corsOptions),
-    )
+    // Only use Express cors middleware when running Express
+    const framework = process.env.PSYCHIC_FRAMEWORK || 'express'
+    if (framework === 'express') {
+      this.expressApp.use(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (cors as unknown as { default: (opts: any) => any }).default(PsychicApp.getOrFail().corsOptions),
+      )
+    }
+    // Hono handles CORS differently via its own middleware - skip for now
+    // TODO: Add Hono CORS support via hono/cors
   }
 
   private initializeJSON() {
-    this.expressApp.use(express.json(PsychicApp.getOrFail().jsonOptions))
+    // Only use Express JSON middleware when running Express
+    const framework = process.env.PSYCHIC_FRAMEWORK || 'express'
+    if (framework === 'express') {
+      this.expressApp.use(express.json(PsychicApp.getOrFail().jsonOptions))
+    }
+    // Hono parses JSON automatically in request handling
   }
 
   private async buildRoutes() {
-    const r = new PsychicRouter(this.expressApp)
+    const r = new PsychicRouter(this.expressApp, this.adapter)
     await PsychicApp.getOrFail().routesCb(r)
     r.commit()
   }

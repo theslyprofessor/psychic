@@ -146,6 +146,14 @@ describe('HonoAdapter', () => {
     })
   })
 
+  describe('disable', () => {
+    it('should have a disable method for framework compatibility', () => {
+      // This test ensures Hono adapter can be used anywhere Express adapter is used
+      expect(typeof adapter.disable).toBe('function')
+      expect(() => adapter.disable('x-powered-by')).not.toThrow()
+    })
+  })
+
   describe('listen', () => {
     it('should return a server instance when using Bun', () => {
       // Mock Bun environment

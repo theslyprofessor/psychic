@@ -119,6 +119,12 @@ export interface PsychicAdapter {
    * Get the underlying framework app
    */
   getApp(): any
+  
+  /**
+   * Disable a framework setting (Express compatibility)
+   * @param setting - Setting name (e.g., 'x-powered-by')
+   */
+  disable(setting: string): void
 }
 
 export type FrameworkType = 'express' | 'hono'

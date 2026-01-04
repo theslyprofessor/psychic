@@ -3,7 +3,8 @@
   "packages": [
     "nodejs_22",
     "postgresql@16",
-    "bun@latest"
+    "bun@latest",
+    "wrk@latest"
   ],
   "shell": {
     "init_hook": [
@@ -13,7 +14,7 @@
       "echo 'Bun: $(bun --version)'",
       "echo ''",
       "echo '📦 Package Manager: Use RUNTIME env var to select (npm|pnpm|yarn|bun)'",
-      "echo '   Current: ${RUNTIME:-npm}'",
+      "echo '   Current: ${RUNTIME:-bun}'",
       "echo ''",
       "echo 'Quick start:'",
       "echo '  RUNTIME=bun npm run build    # Use Bun'",
@@ -48,7 +49,7 @@
     }
   },
   "env": {
-    "PGDATA": "$PWD/.devbox/postgres",
-    "RUNTIME": "npm"
+    "PGDATA":  "$PWD/.devbox/postgres",
+    "RUNTIME": "bun"
   }
 }

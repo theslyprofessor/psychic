@@ -527,7 +527,7 @@ Try setting it to something valid, like:
       const eventType = pathOrOnOrHandler as PsychicUseEventType
       const handler = maybeHandler as () => void
       const wrappedHandler = (server: PsychicServer) => {
-        server.expressApp.use(handler)
+        server.adapter.use(handler as any)
       }
 
       switch (eventType) {
@@ -548,7 +548,7 @@ Try setting it to something valid, like:
       return
     } else {
       const wrappedHandler = (server: PsychicServer) => {
-        server.expressApp.use(pathOrOnOrHandler as RequestHandler)
+        server.adapter.use(pathOrOnOrHandler as any)
       }
       this.on('server:init:after-middleware', wrappedHandler)
     }

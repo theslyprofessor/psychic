@@ -1,5 +1,6 @@
 import { Hono, Context, MiddlewareHandler } from 'hono'
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { setCookie, deleteCookie } from 'hono/cookie'
+import { serve } from '@hono/node-server'
 import {
   PsychicAdapter,
   PsychicRequest,
@@ -12,7 +13,7 @@ import {
 
 export class HonoAdapter implements PsychicAdapter {
   private app: Hono
-  private responseMap = new WeakMap<Context, { statusCode: number; headers: Record<string, string> }>()
+  private responseMap = new WeakMap<Context, { statusCode: number; headers: Record<string, string>; response?: Response }>()
 
   constructor() {
     this.app = new Hono()
@@ -27,6 +28,12 @@ export class HonoAdapter implements PsychicAdapter {
       const psychicReq = await this.adaptRequest(c)
       const psychicRes = this.adaptResponse(c)
       await handler(psychicReq, psychicRes)
+      // Return the stored response (set by json/text/send methods)
+      const state = this.responseMap.get(c)
+      if (state?.response) {
+        return state.response
+      }
+      return c.res
     }
 
     switch (method.toLowerCase()) {
@@ -60,18 +67,48 @@ export class HonoAdapter implements PsychicAdapter {
   use(pathOrHandler: string | PsychicMiddleware, handler?: PsychicMiddleware): void {
     if (typeof pathOrHandler === 'string' && handler) {
       // Path + middleware
-      const honoMiddleware: MiddlewareHandler = async (c, next) => {
+      const honoMiddleware: MiddlewareHandler = async (c, honoNext) => {
         const psychicReq = await this.adaptRequest(c)
         const psychicRes = this.adaptResponse(c)
-        await handler(psychicReq, psychicRes, next)
+        
+        let nextCalled = false
+        const psychicNext = async () => {
+          nextCalled = true
+          await honoNext()
+        }
+        
+        const result = handler(psychicReq, psychicRes, psychicNext)
+        if (result instanceof Promise) {
+          await result
+        }
+        if (!nextCalled) {
+          await honoNext()
+        }
       }
       this.app.use(pathOrHandler, honoMiddleware)
     } else if (typeof pathOrHandler === 'function') {
-      // Just middleware
-      const honoMiddleware: MiddlewareHandler = async (c, next) => {
+      // Just middleware - handle both PsychicMiddleware and Express-style
+      const honoMiddleware: MiddlewareHandler = async (c, honoNext) => {
         const psychicReq = await this.adaptRequest(c)
         const psychicRes = this.adaptResponse(c)
-        await pathOrHandler(psychicReq, psychicRes, next)
+        
+        // Wrap Hono's next() for compatibility
+        const psychicNext = () => {
+          // Don't await here - let Hono handle the chain
+        }
+        
+        // Call middleware - may be sync (Express-style) or async
+        try {
+          const result = pathOrHandler(psychicReq, psychicRes, psychicNext)
+          if (result instanceof Promise) {
+            await result
+          }
+        } catch (err) {
+          console.error('Middleware error:', err)
+        }
+        
+        // Always continue the chain
+        await honoNext()
       }
       this.app.use('*', honoMiddleware)
     }
@@ -93,7 +130,16 @@ export class HonoAdapter implements PsychicAdapter {
   }
 
   async adaptRequest(c: Context): Promise<PsychicRequest> {
-    const url = new URL(c.req.url)
+    // Handle both full URLs (Bun) and paths (Node.js HTTP)
+    let url: URL
+    try {
+      url = new URL(c.req.url)
+    } catch {
+      // Fallback for Node.js HTTP where c.req.url is just a path
+      const host = c.req.header('host') || 'localhost'
+      const protocol = c.req.header('x-forwarded-proto') || 'http'
+      url = new URL(c.req.url, `${protocol}://${host}`)
+    }
     
     return {
       method: c.req.method,
@@ -184,7 +230,9 @@ export class HonoAdapter implements PsychicAdapter {
         Object.entries(state.headers).forEach(([key, value]) => {
           c.header(key, value)
         })
-        return c.json(data, state.statusCode as any)
+        // Store the response for the handler to return
+        state.response = c.json(data, state.statusCode as any)
+        return state.response
       },
 
       text(content: string) {
@@ -264,18 +312,33 @@ export class HonoAdapter implements PsychicAdapter {
   }
 
   listen(port: number, callback?: () => void): any {
-    if (callback) callback()
-    
     // Bun.serve for maximum performance
     if (typeof (globalThis as any).Bun !== 'undefined') {
-      return (globalThis as any).Bun.serve({
+      const server = (globalThis as any).Bun.serve({
         port,
         fetch: this.app.fetch,
       })
+      if (callback) callback()
+      return server
     }
     
-    // Fallback to Node.js
-    return require('node:http').createServer(this.app.fetch).listen(port)
+    // Use @hono/node-server for Node.js compatibility
+    const server = serve({
+      fetch: this.app.fetch,
+      port,
+    }, callback)
+    
+    return server
+  }
+
+  /**
+   * Disable a framework setting (Express compatibility)
+   * Hono doesn't have settings like Express, so this is a no-op
+   * @param setting - Setting name (e.g., 'x-powered-by')
+   */
+  disable(setting: string): void {
+    // No-op: Hono doesn't expose x-powered-by or similar settings
+    // This method exists for framework adapter compatibility
   }
 
   getApp(): Hono {

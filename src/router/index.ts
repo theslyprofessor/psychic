@@ -3,6 +3,7 @@ import { camelize } from '@rvoh/dream/utils'
 import { Application, Request, RequestHandler, Response, Router } from 'express'
 import util, { debuglog } from 'node:util'
 import pluralize from 'pluralize-esm'
+import type { PsychicAdapter } from '../adapters/types.js'
 import PsychicController from '../controller/index.js'
 import ParamValidationError from '../error/controller/ParamValidationError.js'
 import ParamValidationErrors from '../error/controller/ParamValidationErrors.js'
@@ -34,10 +35,12 @@ const ERROR_LOGGING_DEPTH = 6
 
 export default class PsychicRouter {
   public app: Application | null
+  public adapter: PsychicAdapter | null
   public currentNamespaces: NamespaceConfig[] = []
   public routeManager: RouteManager = new RouteManager()
-  constructor(app: Application | null) {
+  constructor(app: Application | null, adapter?: PsychicAdapter | null) {
     this.app = app
+    this.adapter = adapter || null
   }
 
   public get routes() {
@@ -51,20 +54,36 @@ export default class PsychicRouter {
   // this is called after all routes have been processed.
   public commit() {
     const app = this.app
-    if (!app) throw new CannotCommitRoutesWithoutExpressApp()
+    const adapter = this.adapter
+    if (!app && !adapter) throw new CannotCommitRoutesWithoutExpressApp()
 
     this.routes.forEach(route => {
       if ((route as MiddlewareRouteConfig).middleware) {
         const routeConf = route as MiddlewareRouteConfig
-        app[routeConf.httpMethod](
-          routePath(routeConf.path),
-          ...(Array.isArray(routeConf.middleware) ? routeConf.middleware : [routeConf.middleware]),
-        )
+        // Middleware routes only supported on Express for now
+        if (app) {
+          app[routeConf.httpMethod](
+            routePath(routeConf.path),
+            ...(Array.isArray(routeConf.middleware) ? routeConf.middleware : [routeConf.middleware]),
+          )
+        }
       } else {
         const routeConf = route as ControllerActionRouteConfig
-        app[routeConf.httpMethod](routePath(routeConf.path), (req, res) => {
-          this.handle(routeConf.controller, routeConf.action, { req, res }).catch(() => {})
-        })
+        
+        // Use adapter if available, otherwise fall back to Express app
+        if (adapter) {
+          adapter.registerRoute(
+            routeConf.httpMethod.toUpperCase(),
+            routePath(routeConf.path),
+            async (req, res) => {
+              await this.handle(routeConf.controller, routeConf.action, { req: req as any, res: res as any })
+            }
+          )
+        } else if (app) {
+          app[routeConf.httpMethod](routePath(routeConf.path), (req, res) => {
+            this.handle(routeConf.controller, routeConf.action, { req, res }).catch(() => {})
+          })
+        }
       }
     })
   }

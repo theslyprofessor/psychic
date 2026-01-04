@@ -186,6 +186,10 @@ export class ExpressAdapter implements PsychicAdapter {
     return this.app.listen(port, callback)
   }
 
+  disable(setting: string): void {
+    this.app.disable(setting)
+  }
+
   getApp(): express.Application {
     return this.app
   }
