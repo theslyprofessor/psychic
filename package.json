@@ -85,6 +85,14 @@
     "express": "^5.2.1",
     "openapi-typescript": "^7.8.0"
   },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "hono": "^4.0.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@jest-mock/express": "^3.0.0",
