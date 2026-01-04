@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Universal runtime wrapper for package.json scripts
+# Usage: ./scripts/run <command> [args...]
+# 
+# Set RUNTIME env var to choose package manager:
+#   RUNTIME=bun ./scripts/run build
+#   RUNTIME=pnpm ./scripts/run test
+#   RUNTIME=yarn ./scripts/run dev
+#
+# Defaults to npm if RUNTIME not set
+
+set -e
+
+RUNTIME="${RUNTIME:-npm}"
+
+# Detect available package managers
+detect_runtime() {
+  case "$RUNTIME" in
+    bun)
+      if command -v bun &> /dev/null; then
+        echo "bun"
+      else
+        echo "❌ Bun not found. Install: curl -fsSL https://bun.sh/install | bash" >&2
+        exit 1
+      fi
+      ;;
+    pnpm)
+      if command -v pnpm &> /dev/null; then
+        echo "pnpm"
+      else
+        echo "❌ pnpm not found. Install: npm install -g pnpm" >&2
+        exit 1
+      fi
+      ;;
+    yarn)
+      if command -v yarn &> /dev/null; then
+        echo "yarn"
+      else
+        echo "❌ Yarn not found. Install: npm install -g yarn" >&2
+        exit 1
+      fi
+      ;;
+    npm)
+      if command -v npm &> /dev/null; then
+        echo "npm"
+      else
+        echo "❌ npm not found." >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "❌ Unknown runtime: $RUNTIME (valid: npm, pnpm, yarn, bun)" >&2
+      exit 1
+      ;;
+  esac
+}
+
+RUNTIME_CMD=$(detect_runtime)
+
+# Special handling for different commands
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+  install|i)
+    exec "$RUNTIME_CMD" install "$@"
+    ;;
+  add)
+    case "$RUNTIME_CMD" in
+      npm) exec npm install "$@" ;;
+      pnpm) exec pnpm add "$@" ;;
+      yarn) exec yarn add "$@" ;;
+      bun) exec bun add "$@" ;;
+    esac
+    ;;
+  remove|rm)
+    case "$RUNTIME_CMD" in
+      npm) exec npm uninstall "$@" ;;
+      pnpm) exec pnpm remove "$@" ;;
+      yarn) exec yarn remove "$@" ;;
+      bun) exec bun remove "$@" ;;
+    esac
+    ;;
+  run)
+    # Run a script from package.json
+    exec "$RUNTIME_CMD" run "$@"
+    ;;
+  exec|x)
+    # Execute a binary from node_modules/.bin
+    case "$RUNTIME_CMD" in
+      npm) exec npx "$@" ;;
+      pnpm) exec pnpm exec "$@" ;;
+      yarn) exec yarn exec "$@" ;;
+      bun) exec bunx "$@" ;;
+    esac
+    ;;
+  *)
+    # Default: pass through to runtime
+    exec "$RUNTIME_CMD" "$COMMAND" "$@"
+    ;;
+esac

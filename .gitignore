@@ -1,5 +1,6 @@
 node_modules
 .env*
+!.envrc
 .dream
 logs/!.gitignore
 *.log
@@ -18,3 +19,16 @@ dist
 typetrace/*
 
 .pnp.*
+
+# Package manager lock files (use RUNTIME env var to choose)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+
+# Devbox
+.devbox/
+.devbox.lock
+
+# direnv
+.envrc.local

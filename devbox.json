@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
+  "packages": [
+    "nodejs_22",
+    "postgresql@16",
+    "bun@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo '🔧 Psychic Development Environment'",
+      "echo 'Node: $(node --version)'",
+      "echo 'PostgreSQL: $(postgres --version | head -1)'",
+      "echo 'Bun: $(bun --version)'",
+      "echo ''",
+      "echo '📦 Package Manager: Use RUNTIME env var to select (npm|pnpm|yarn|bun)'",
+      "echo '   Current: ${RUNTIME:-npm}'",
+      "echo ''",
+      "echo 'Quick start:'",
+      "echo '  RUNTIME=bun npm run build    # Use Bun'",
+      "echo '  RUNTIME=pnpm npm test         # Use pnpm'",
+      "echo '  npm run build                 # Use default (npm)'",
+      ""
+    ],
+    "scripts": {
+      "setup": [
+        "echo 'Installing dependencies...'",
+        "${RUNTIME:-npm} install"
+      ],
+      "test": [
+        "npm run uspec"
+      ],
+      "dev": [
+        "npm run dev"
+      ],
+      "db:start": [
+        "pg_ctl -D $PGDATA -l $PGDATA/logfile start"
+      ],
+      "db:stop": [
+        "pg_ctl -D $PGDATA stop"
+      ],
+      "db:init": [
+        "initdb -D $PGDATA",
+        "echo \"unix_socket_directories = '$PGDATA'\" >> $PGDATA/postgresql.conf",
+        "pg_ctl -D $PGDATA -l $PGDATA/logfile start",
+        "createdb psychic_test",
+        "echo 'Database initialized: psychic_test'"
+      ]
+    }
+  },
+  "env": {
+    "PGDATA": "$PWD/.devbox/postgres",
+    "RUNTIME": "npm"
+  }
+}
