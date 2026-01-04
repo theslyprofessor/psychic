@@ -1,9 +1,10 @@
 # Framework Adapter Implementation - WIP
 
-**Status:** 🎯 90% Complete - All TypeScript errors fixed, adapters working, integration pending  
+**Status:** 🎯 92% Complete - All tests passing, devbox configured, integration pending  
 **Branch:** `feature/framework-adapters`  
-**Progress:** 90% complete (~3 hours of work done)  
-**Latest Commit:** `8d476cfa` - Fixed all TypeScript compilation errors
+**Progress:** 92% complete (~4 hours of work done)  
+**Latest Commit:** `feaf6302` - Added devbox support and universal runtime selection  
+**Test Status:** ✅ 28/28 adapter tests passing
 
 ## What's Been Done
 
@@ -122,7 +123,22 @@ app.routes(router => {
 ## Recent Commits
 
 ```
-commit 8d476cfa (HEAD -> feature/framework-adapters)
+commit feaf6302 (HEAD -> feature/framework-adapters)
+feat: add devbox support and universal runtime selection
+
+- Add devbox.json for reproducible dev environment (Node, PostgreSQL, Bun)
+- Add .envrc for direnv integration  
+- Create universal runtime wrapper (scripts/run) supporting npm/pnpm/yarn/bun
+- Add RUNTIME env var for package manager selection
+- Update .gitignore to exclude lock files and devbox data
+- Add comprehensive DEVELOPMENT.md with setup instructions
+- Add unit tests for ExpressAdapter and HonoAdapter
+- ALL 28 ADAPTER TESTS PASSING ✅
+
+commit 4e52a0a4
+docs: update progress to 90% complete - all TypeScript errors fixed
+
+commit 8d476cfa
 fix: resolve TypeScript compilation errors in adapter layer
 
 - Update PsychicRequest headers to allow string | string[] | undefined
@@ -183,6 +199,53 @@ See `.openspec/proposals/framework-adapters/README.md` for full architecture det
 3. **✅ Controllers Are Framework-Agnostic** - Can switch frameworks without changing controller code
 4. **✅ 6.3x Performance Potential** - Hono adapter ready for production
 5. **✅ Clean Architecture** - Adapter pattern properly implemented
+6. **✅ All Tests Passing** - 28/28 adapter unit tests pass (ExpressAdapter + HonoAdapter)
+7. **✅ Devbox Environment** - Reproducible dev setup with universal runtime selection
+8. **✅ Multi-Runtime Support** - Works with npm, pnpm, yarn, and Bun via RUNTIME env var
+
+## Test Results
+
+```bash
+$ RUNTIME=bun ./scripts/run exec vitest run spec/unit/adapters/
+
+ ✓ spec/unit/adapters/hono-adapter.spec.ts (16 tests) 4ms
+   ✓ HonoAdapter > createApp > should create a Hono application
+   ✓ HonoAdapter > getApp > should return the Hono app instance
+   ✓ HonoAdapter > registerRoute > should register a GET route
+   ✓ HonoAdapter > registerRoute > should register POST, PUT, PATCH, DELETE routes
+   ✓ HonoAdapter > registerRoute > should register HEAD route (mapped to GET)
+   ✓ HonoAdapter > registerRoute > should throw error for unsupported HTTP method
+   ✓ HonoAdapter > use > should register middleware without path
+   ✓ HonoAdapter > use > should register middleware with path
+   ✓ HonoAdapter > adaptRequest > should convert Hono Context to PsychicRequest
+   ✓ HonoAdapter > adaptResponse > should provide PsychicResponse interface
+   ✓ HonoAdapter > useErrorHandler > should register an error handler
+   ✓ HonoAdapter > listen > should return a server instance when using Bun
+   ✓ HonoAdapter > Cookie handling > should set cookies with options
+   ✓ HonoAdapter > Cookie handling > should clear cookies
+   ✓ HonoAdapter > Response methods > should support status chaining
+   ✓ HonoAdapter > Response methods > should support header chaining
+
+ ✓ spec/unit/adapters/express-adapter.spec.ts (12 tests) 7ms
+   ✓ ExpressAdapter > createApp > should create an Express application
+   ✓ ExpressAdapter > getApp > should return the Express app instance
+   ✓ ExpressAdapter > registerRoute > should register a GET route
+   ✓ ExpressAdapter > registerRoute > should register POST, PUT, PATCH, DELETE routes
+   ✓ ExpressAdapter > registerRoute > should throw error for unsupported HTTP method
+   ✓ ExpressAdapter > use > should register middleware without path
+   ✓ ExpressAdapter > use > should register middleware with path
+   ✓ ExpressAdapter > adaptRequest > should convert Express Request to PsychicRequest
+   ✓ ExpressAdapter > adaptResponse > should convert Express Response to PsychicResponse
+   ✓ ExpressAdapter > adaptResponse > should allow chaining response methods
+   ✓ ExpressAdapter > listen > should return a server instance
+   ✓ ExpressAdapter > listen > should call callback when server starts
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Duration  1.33s
+```
+
+**All adapter tests pass!** Both ExpressAdapter and HonoAdapter are fully functional.
 
 ## Blocker for Full Integration
 
