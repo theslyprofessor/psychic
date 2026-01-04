@@ -1,5 +1,5 @@
 import { DreamCLI } from '@rvoh/dream/system'
-import { Request, Response } from 'express'
+import { PsychicRequest, PsychicResponse } from '../../adapters/types.js'
 import colorize from '../../cli/helpers/colorize.js'
 import EnvInternal from '../../helpers/EnvInternal.js'
 import { HttpMethod } from '../../router/types.js'
@@ -12,8 +12,8 @@ export default function logIfDevelopment({
   startTime,
   fallbackStatusCode = 200,
 }: {
-  req: Request
-  res: Response
+  req: PsychicRequest
+  res: PsychicResponse
   startTime: number
   fallbackStatusCode?: number
 }) {

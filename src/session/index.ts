@@ -1,4 +1,4 @@
-import { CookieOptions, Request, Response } from 'express'
+import { PsychicRequest, PsychicResponse, PsychicCookieOptions } from '../adapters/types.js'
 import InternalEncrypt from '../encrypt/internal-encrypt.js'
 import cookieMaxAgeFromCookieOpts from '../helpers/cookieMaxAgeFromCookieOpts.js'
 import EnvInternal from '../helpers/EnvInternal.js'
@@ -6,8 +6,8 @@ import PsychicApp, { CustomCookieOptions } from '../psychic-app/index.js'
 
 export default class Session {
   constructor(
-    private req: Request,
-    private res: Response,
+    private req: PsychicRequest,
+    private res: PsychicResponse,
   ) {}
 
   public getCookie(name: string) {
@@ -37,4 +37,4 @@ export default class Session {
   }
 }
 
-export type CustomSessionCookieOptions = Omit<CookieOptions, 'maxAge'> & CustomCookieOptions
+export type CustomSessionCookieOptions = Omit<PsychicCookieOptions, 'maxAge'> & CustomCookieOptions
