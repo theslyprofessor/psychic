@@ -14,6 +14,15 @@ export interface PsychicCookieOptions {
   sameSite?: boolean | 'lax' | 'strict' | 'none'
 }
 
+export interface PsychicCorsOptions {
+  origin?: string | string[] | ((origin: string) => string | undefined | null) | boolean
+  allowMethods?: string[]
+  allowHeaders?: string[]
+  maxAge?: number
+  credentials?: boolean
+  exposeHeaders?: string[]
+}
+
 export interface PsychicRequest {
   method: string
   url: string
@@ -99,6 +108,11 @@ export interface PsychicAdapter {
    * Register error handler
    */
   useErrorHandler(handler: PsychicErrorHandler): void
+  
+  /**
+   * Configure CORS (Cross-Origin Resource Sharing)
+   */
+  useCors(options: PsychicCorsOptions): void
   
   /**
    * Convert native framework request to PsychicRequest

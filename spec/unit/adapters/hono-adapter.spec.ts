@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HonoAdapter } from '../../../src/adapters/hono-adapter.js'
-import type { PsychicRequest, PsychicResponse } from '../../../src/adapters/types.js'
+import type { PsychicRequest, PsychicResponse, PsychicCorsOptions } from '../../../src/adapters/types.js'
 
 describe('HonoAdapter', () => {
   let adapter: HonoAdapter
@@ -240,6 +240,43 @@ describe('HonoAdapter', () => {
       })
 
       expect(app).toBeDefined()
+    })
+  })
+
+  describe('useCors', () => {
+    it('should configure CORS with default options', () => {
+      expect(() => adapter.useCors({})).not.toThrow()
+    })
+
+    it('should configure CORS with origin string', () => {
+      expect(() => adapter.useCors({ origin: 'https://example.com' })).not.toThrow()
+    })
+
+    it('should configure CORS with origin array', () => {
+      expect(() => adapter.useCors({ 
+        origin: ['https://example.com', 'https://app.example.com'] 
+      })).not.toThrow()
+    })
+
+    it('should configure CORS with all options', () => {
+      const corsOptions: PsychicCorsOptions = {
+        origin: 'https://example.com',
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+        allowHeaders: ['Content-Type', 'Authorization'],
+        maxAge: 86400,
+        credentials: true,
+        exposeHeaders: ['X-Custom-Header'],
+      }
+      
+      expect(() => adapter.useCors(corsOptions)).not.toThrow()
+    })
+
+    it('should handle boolean origin (true = allow all)', () => {
+      expect(() => adapter.useCors({ origin: true })).not.toThrow()
+    })
+
+    it('should handle boolean origin (false = deny)', () => {
+      expect(() => adapter.useCors({ origin: false })).not.toThrow()
     })
   })
 })

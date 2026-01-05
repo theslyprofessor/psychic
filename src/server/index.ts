@@ -230,16 +230,11 @@ export default class PsychicServer {
   }
 
   private initializeCors() {
-    // Only use Express cors middleware when running Express
-    const framework = process.env.PSYCHIC_FRAMEWORK || 'express'
-    if (framework === 'express') {
-      this.expressApp.use(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (cors as unknown as { default: (opts: any) => any }).default(PsychicApp.getOrFail().corsOptions),
-      )
+    const corsOptions = PsychicApp.getOrFail().corsOptions
+    if (corsOptions) {
+      // Use adapter's CORS implementation for framework-agnostic handling
+      this.adapter.useCors(corsOptions as any)
     }
-    // Hono handles CORS differently via its own middleware - skip for now
-    // TODO: Add Hono CORS support via hono/cors
   }
 
   private initializeJSON() {

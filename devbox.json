@@ -4,41 +4,36 @@
     "nodejs_22",
     "postgresql@16",
     "bun@latest",
-    "wrk@latest"
+    "wrk@latest",
+    "hey@latest"
   ],
   "shell": {
     "init_hook": [
-      "echo '🔧 Psychic Development Environment'",
-      "echo 'Node: $(node --version)'",
-      "echo 'PostgreSQL: $(postgres --version | head -1)'",
-      "echo 'Bun: $(bun --version)'",
+      "echo '══════════════════════════════════════════════════════════'",
+      "echo '  Psychic Framework - Development Environment'",
+      "echo '══════════════════════════════════════════════════════════'",
       "echo ''",
-      "echo '📦 Package Manager: Use RUNTIME env var to select (npm|pnpm|yarn|bun)'",
-      "echo '   Current: ${RUNTIME:-bun}'",
+      "echo '  Node: '$(node --version)'  Bun: '$(bun --version)",
       "echo ''",
-      "echo 'Quick start:'",
-      "echo '  RUNTIME=bun npm run build    # Use Bun'",
-      "echo '  RUNTIME=pnpm npm test         # Use pnpm'",
-      "echo '  npm run build                 # Use default (npm)'",
-      ""
+      "echo '  Commands:'",
+      "echo '    devbox run dev              - Start dev server (Express)'",
+      "echo '    devbox run dev:hono         - Start dev server (Hono)'",
+      "echo '    devbox run test             - Run tests'",
+      "echo '    devbox run bench:express    - Benchmark Express'",
+      "echo '    devbox run bench:hono       - Benchmark Hono'",
+      "echo '    devbox run bench:compare    - Compare both frameworks'",
+      "echo ''"
     ],
     "scripts": {
-      "setup": [
-        "echo 'Installing dependencies...'",
-        "${RUNTIME:-npm} install"
-      ],
-      "test": [
-        "npm run uspec"
-      ],
-      "dev": [
-        "npm run dev"
-      ],
-      "db:start": [
-        "pg_ctl -D $PGDATA -l $PGDATA/logfile start"
-      ],
-      "db:stop": [
-        "pg_ctl -D $PGDATA stop"
-      ],
+      "setup": "bun install",
+      "test": "npx vitest run",
+      "dev": "npx tsx test-adapter.ts express",
+      "dev:hono": "npx tsx test-adapter.ts hono",
+      "bench:express": "./scripts/bench.sh express",
+      "bench:hono": "./scripts/bench.sh hono",
+      "bench:compare": "./scripts/bench.sh compare",
+      "db:start": "pg_ctl -D $PGDATA -l $PGDATA/logfile start",
+      "db:stop": "pg_ctl -D $PGDATA stop",
       "db:init": [
         "initdb -D $PGDATA",
         "echo \"unix_socket_directories = '$PGDATA'\" >> $PGDATA/postgresql.conf",
@@ -49,7 +44,7 @@
     }
   },
   "env": {
-    "PGDATA":  "$PWD/.devbox/postgres",
+    "PGDATA": "$PWD/.devbox/postgres",
     "RUNTIME": "bun"
   }
 }

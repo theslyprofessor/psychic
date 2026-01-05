@@ -1,3 +1,4 @@
+import * as cors from 'cors'
 import express, { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express'
 import {
   PsychicAdapter,
@@ -7,6 +8,7 @@ import {
   PsychicMiddleware,
   PsychicErrorHandler,
   PsychicCookieOptions,
+  PsychicCorsOptions,
 } from './types.js'
 
 export class ExpressAdapter implements PsychicAdapter {
@@ -188,6 +190,44 @@ export class ExpressAdapter implements PsychicAdapter {
 
   disable(setting: string): void {
     this.app.disable(setting)
+  }
+
+  /**
+   * Configure CORS middleware for Express
+   * @param options - CORS configuration options
+   */
+  useCors(options: PsychicCorsOptions): void {
+    // Convert PsychicCorsOptions to Express cors options
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const corsOptions: cors.CorsOptions = {}
+    
+    if (options.origin !== undefined) {
+      corsOptions.origin = options.origin as cors.CorsOptions['origin']
+    }
+    
+    if (options.allowMethods) {
+      corsOptions.methods = options.allowMethods
+    }
+    
+    if (options.allowHeaders) {
+      corsOptions.allowedHeaders = options.allowHeaders
+    }
+    
+    if (options.maxAge !== undefined) {
+      corsOptions.maxAge = options.maxAge
+    }
+    
+    if (options.credentials !== undefined) {
+      corsOptions.credentials = options.credentials
+    }
+    
+    if (options.exposeHeaders) {
+      corsOptions.exposedHeaders = options.exposeHeaders
+    }
+    
+    // Express cors middleware - handle both ESM and CJS exports
+    const corsMiddleware = (cors as unknown as { default: (opts: cors.CorsOptions) => RequestHandler }).default
+    this.app.use(corsMiddleware(corsOptions))
   }
 
   getApp(): express.Application {

@@ -1,5 +1,6 @@
 import { Hono, Context, MiddlewareHandler } from 'hono'
 import { setCookie, deleteCookie } from 'hono/cookie'
+import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
 import {
   PsychicAdapter,
@@ -9,6 +10,7 @@ import {
   PsychicMiddleware,
   PsychicErrorHandler,
   PsychicCookieOptions,
+  PsychicCorsOptions,
 } from './types.js'
 
 export class HonoAdapter implements PsychicAdapter {
@@ -339,6 +341,36 @@ export class HonoAdapter implements PsychicAdapter {
   disable(setting: string): void {
     // No-op: Hono doesn't expose x-powered-by or similar settings
     // This method exists for framework adapter compatibility
+  }
+
+  /**
+   * Configure CORS middleware for Hono
+   * @param options - CORS configuration options
+   */
+  useCors(options: PsychicCorsOptions): void {
+    // Build Hono CORS options, only including defined values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const honoOptions: any = {}
+    
+    // Handle origin
+    if (options.origin !== undefined) {
+      if (typeof options.origin === 'boolean') {
+        honoOptions.origin = options.origin ? '*' : ''
+      } else {
+        honoOptions.origin = options.origin
+      }
+    } else {
+      honoOptions.origin = '*'
+    }
+    
+    // Only add defined options
+    if (options.allowMethods) honoOptions.allowMethods = options.allowMethods
+    if (options.allowHeaders) honoOptions.allowHeaders = options.allowHeaders
+    if (options.maxAge !== undefined) honoOptions.maxAge = options.maxAge
+    if (options.credentials !== undefined) honoOptions.credentials = options.credentials
+    if (options.exposeHeaders) honoOptions.exposeHeaders = options.exposeHeaders
+    
+    this.app.use('*', cors(honoOptions))
   }
 
   getApp(): Hono {
